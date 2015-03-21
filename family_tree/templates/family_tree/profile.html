@@ -2,23 +2,49 @@
 {% load staticfiles %}
 {% load i18n %}
 
-
 {% block content %}
-<div class="container">
-    <p>
-        <a class="btn btn-default" href="/person={{ person.id }}/" role="button">&laquo;{%trans "Back" %}</a>
-        {% if person.locked %}
-            {% trans "This profile has been locked by this user." %}
-        {% else %}
-            <a class="btn btn-default" href="#" role="button">{% trans "Edit" %}</a>
-        {% endif %}
-    </p>
+<div class="container" style="padding-top: 20px;">
+    <div class="col-md-12">
+        <p>
+            <a class="btn btn-success" href="/person={{ person.id }}/" role="button">&laquo;{%trans "Tree" %}</a>
+
+            {% if not locked %}
+                {% if requested_language %}
+                    <a class="btn btn-primary" href="/edit_profile={{ person.id }}/ln={{ requested_language }}/" role="button">{% trans "Edit" %}</a>
+                {% else %}
+                    <a class="btn btn-primary" href="/edit_profile={{ person.id }}/" role="button">{% trans "Edit" %}</a>
+                {% endif %}
+            {% endif %}
+
+            {% if show_relation_to_me %}
+                <a class="btn btn-warning" href="/how_am_i_related={{ person.id }}/" role="button">{%trans "Relation To Me" %}</a>
+            {% endif %}
+
+            <a class="btn btn-info" href="/ancestors={{ person.id }}/" role="button">{%trans "Ancestors" %}</a>
+            <a class="btn btn-info" href="/descendants={{ person.id }}/" role="button">{%trans "Descendants" %}</a>
+
+        </p>
+        <p>
+            {% if locked %}
+                {% trans "This profile has been locked by this user." %}
+            {% endif %}
+        </p>
+    </div>
     <div class="col-md-4">
-        {% if person.photo %}
-            <img src="/media/{{person.photo}}"/>
+        {% if person.large_thumbnail %}
+            <img src="/media/{{person.large_thumbnail}}" alt="{{ person.name }}"/>
         {% else %}
-            <img src="{% static "img/smiley.png" %}"/>
+            <img src="{% static "img/portrait_200.png" %}" alt="{% trans "No photo uploaded for " %} {{ person.name }}"/>
         {% endif %}
+
+
+        {% if invite_allowed %}
+        <form role="form" action="/accounts/invite_person={{ person.id }}/" method="post">
+            {% csrf_token %}
+            <button class="btn btn-primary" type="submit" style ="width:200px;">{% trans "Invite to join" %}</button>
+        </form>
+        {% endif %}
+
     </div>
     <div class="col-md-8">
         <table class="table table-striped">
@@ -47,6 +73,11 @@
                 </tr>
             {% endif %}
 
+                <tr>
+                  <th>{% trans "First Language" %}</th>
+                  <td>{{ person.get_language_display }}</td>
+                </tr>
+
             {% if person.email %}
                 <tr>
                   <th>{% trans "Email" %}</th>
@@ -71,7 +102,7 @@
             {% if person.address %}
                 <tr>
                   <th>{% trans "Location" %}</th>
-                  <td>{{ person.address }}</td>
+                  <td><a href="/map={{ person.id }}">{{ person.address }}</a></td>
                 </tr>
             {% endif %}
 
@@ -81,7 +112,7 @@
     <div class="col-md-12">
         <h3>{% trans "Biography" %}</h3>
         <div class="dropdown">
-            <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-expanded="true">
+            <button class="btn btn-info dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-expanded="true">
                 {{ biography.get_language_display }}
                 <span class="caret"></span>
             </button>
@@ -90,7 +121,13 @@
                     <li role="presentation"><a role="menuitem" tabindex="-1" href="/profile={{ person.id }}/ln={{ language_code }}/">{{ language_display }}</a></li>
                 {% endfor %}
             </ul>
+            {% if locked %}
+
+            {% else %}
+                <a class="btn btn-primary" href="/edit_biography={{ person.id }}/ln={{ biography.language }}/" role="button">{% trans "Edit Biography" %}</a>
+            {% endif %}
         </div>
+
         <p>
             {% if biography %}
                 {{ biography.content | safe }}
@@ -101,5 +138,6 @@
     </div>
 </div>
 {% endblock %}
+
 
 

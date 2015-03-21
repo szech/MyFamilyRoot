@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="container">
+
+    <form id="search_form" role="form" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <h4>{% trans "Search Name:" %}</h4>
+            <div class="form-group">
+                <input type="search_text" id="search_text" name="search_text" class="form-control" placeholder="{% trans "Name" %}" required autofocus>
+            </div>
+        </div>
+    </form>
+    <div id="searching_in_progress" style="display:none;">
+        <img src="{% static "img/ajax-loader.gif" %}"/> {% trans "Searching..." %}
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+              <tbody id="results">
+              </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extrascript %}
+    <script src="{% static "js/app_person_search.js" %}"></script>
+{% endblock %}

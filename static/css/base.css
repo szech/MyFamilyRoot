@@ -1,3 +1,41 @@
+/* Navbar overrides */
+.navbar-inverse {
+    background-color: #250042;
+    border-color: #080808;
+    color: #FFFFFF;
+}
+
+.navbar-inverse .navbar-brand {
+    color: #FFFFFF;
+    font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.navbar-inverse .navbar-nav>li>a
+{
+    color: #DDDDDD;
+}
+
+.btn{
+    margin-top: 5px;
+}
+
+/*
+.btn-primary{
+    color: #fff;
+    background-color: #008000;
+    border-color: #006000;
+}
+
+.btn-primary:hover,.btn-primary:focus,.btn-primary.focus,.btn-primary:active,.btn-primary.active,.open>.dropdown-toggle.btn-primary {
+    color:#fff;
+    background-color:#00CC00;
+    border-color:#00CC00
+
+}
+*/
+
 /* Move down content because we have a fixed navbar that is 50px tall */
 body {
   padding-top: 50px;
@@ -11,10 +49,16 @@ body {
     margin: 0 auto;
 }
 
+.form-inline {
+    margin: 0;
+    padding: 0;
+    display: inline;
+}
+
 
 /* Family Tree */
 .w {
-    padding: 16px;
+    padding: 12px;
     position: absolute;
     border: 1px solid black;
     z-index: 4;
@@ -26,8 +70,6 @@ body {
     -moz-box-shadow: 2px 2px 19px #e0e0e0;
     -moz-border-radius: 8px;
     border-radius: 8px;
-    opacity: 0.8;
-    filter: alpha(opacity=80);
     cursor: move;
     background-color: white;
     font-size: 12px;
@@ -37,10 +79,34 @@ body {
 }
 
 .w:hover {
-background-color: #5c96bc;
-color:white;
-
+    background-color:#6ed171;
+    color:white;
 }
+
+.tree_thumb {
+    height: 80px;
+    width: 80px;
+}
+
+/* Smartphones (portrait and landscape) --  --  --  --  -- - */
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 767px) {
+
+    .tree_thumb {
+        height: 40px;
+        width: 40px;
+    }
+
+    .w {
+        padding: 6px;
+        width: 80px;
+        max-width: 120px;
+    }
+}
+
+
+
 
 .aLabel {
 	-webkit-transition:background-color 0.25s ease-in;
@@ -49,9 +115,10 @@ color:white;
 }
 
 .aLabel._jsPlumb_hover, ._jsPlumb_source_hover, ._jsPlumb_target_hover {
-	background-color:#1e8151;
+	background-color:#6ed171;
 	color:white;
 }
+
 
 .aLabel {
 	background-color:white;
@@ -62,6 +129,7 @@ color:white;
 	cursor:pointer;
 	font-size: 10px;
 }
+
 
 .ep {
 	position:absolute;
@@ -90,3 +158,112 @@ color:white;
 
 path { cursor:pointer; }
 
+
+
+textarea {
+    width: 100%;
+    height: 300px;
+}
+
+/** Custom CSS for image cropping **/
+@media only screen and (max-device-width: 500px) {
+
+    #crop_target {
+        width: 70%;
+    }
+}
+
+@media only screen and (min-device-width: 500px) {
+
+    #crop_target {
+        width: 80%;
+        max-width: 500px;
+    }
+}
+
+/**CSS for maps**/
+#map_canvas {
+    height: 100%;
+    width: 100%;
+    left: 0;
+    position: absolute;
+    top: 50px;
+}
+
+.img-with-text {
+    text-align: center;
+    width: 90px;
+    float: left;
+}
+
+.img-with-text img {
+    display: block;
+    margin: 0 auto;
+}
+
+/**CSS for open street maps**/
+.img-with-text-osm {
+    text-align: center;
+    width: 90px;
+    float: left;
+}
+
+.img-with-text-osm img {
+    display: block;
+    margin: 0 auto;
+}
+
+/** CSS for search page **/
+.search_photo {
+    width:60px;
+}
+
+/** Add relation page **/
+.boxed {
+        padding: 12px;
+        border: 1px solid black;
+        border-radius: 1em;
+        border: 1px solid #2e6f9a;
+        box-shadow: 2px 2px 19px #e0e0e0;
+        -o-box-shadow: 2px 2px 19px #e0e0e0;
+        -webkit-box-shadow: 2px 2px 19px #e0e0e0;
+        -moz-box-shadow: 2px 2px 19px #e0e0e0;
+        -moz-border-radius: 8px;
+        border-radius: 8px;
+        background-color: white;
+        font-size: 12px;
+        -webkit-transition: background-color 0.25s ease-in;
+        -moz-transition: background-color 0.25s ease-in;
+        transition: background-color 0.25s ease-in;
+        margin-bottom: 15px;
+}
+
+#add_relation {
+    width: 300px ;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/** How Am I Related Page **/
+.boxed_chained {
+        padding: 10px;
+        border: 1px solid black;
+        border-radius: 1em;
+        border: 1px solid #2e6f9a;
+        box-shadow: 2px 2px 19px #e0e0e0;
+        -o-box-shadow: 2px 2px 19px #e0e0e0;
+        -webkit-box-shadow: 2px 2px 19px #e0e0e0;
+        -moz-box-shadow: 2px 2px 19px #e0e0e0;
+        -moz-border-radius: 8px;
+        border-radius: 8px;
+        background-color: white;
+        font-size: 12px;
+        -webkit-transition: background-color 0.25s ease-in;
+        -moz-transition: background-color 0.25s ease-in;
+        transition: background-color 0.25s ease-in;
+        margin-bottom: 68px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        width: 200px;
+}

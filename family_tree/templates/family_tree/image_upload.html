@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/blueimp-file-upload/9.5.7/css/jquery.fileupload.min.css"/>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{% trans "New Profile Photo" %}</h1>
+    <blockquote>
+        <p>
+            {% trans "Upload the new profile photo for" %} {{person.name}}
+       </p>
+    </blockquote>
+
+    <span class="btn btn-success fileinput-button">
+        <i class="glyphicon glyphicon-plus"></i>
+        <span>{% trans "Select file..." %}</span>
+        <!-- The file input field used as target for the file upload widget -->
+        <input id="fileupload" type="file" name="picture">
+    </span>
+    <br/>
+    <br/>
+    <!-- The global progress bar -->
+
+    <!--[if gt IE 9]><!-->
+    <div id="progress" class="progress">
+        <div class="progress-bar progress-bar-success"></div>
+    </div>
+    <!--<![endif]-->
+
+    <div id="processing_wait" style="display:none;">
+        <img src="{% static "img/ajax-loader.gif" %}"/> {% trans "Processing..." %}
+    </div>
+    <div id="error_text" style="display:none;">{% trans "Error uploading image" %}</div>
+    <div class="files" id="files"></div>
+</div>
+{% endblock %}
+
+{% block extrascript %}
+
+    <!--From https://github.com/blueimp/jQuery-File-Upload/blob/master/basic.html
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-file-upload/9.5.7/jquery.iframe-transport.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-file-upload/9.5.7/jquery.fileupload.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    -->
+    <script src="{% static "js/jquery.file_upload.compiled.js" %}"></script>
+    <script src="{% static "js/app_file_upload.js" %}"></script>
+
+{% endblock %}

@@ -1,6 +1,7 @@
 from django.db import models
 from family_tree.models.person import Person
 from django.conf import settings
+import bleach
 
 class BiographyManager(models.Manager):
     '''
@@ -66,7 +67,7 @@ class Biography(models.Model):
 
     #Fields
     person = models.ForeignKey(Person, null = False, blank = False, db_index = True)
-    language = models.CharField(max_length=5, choices=settings.LOCALES, null = False, blank = False, db_index = True)
+    language = models.CharField(max_length=5, choices=settings.LANGUAGES, null = False, blank = False, db_index = True)
     content = models.TextField(null = True, blank = True)
 
     #Tracking
@@ -76,12 +77,11 @@ class Biography(models.Model):
     allowed_print_tags = [
             # tags whitelist
             "h1", "h2", "h3", "h4", "h5", "h6",
-            "b", "i", "strong", "em", "tt",
+            "b", "i", "strong", "em", "tt","u","small",
             "p", "br",
             "span", "div", "blockquote", "code", "hr",
             "ul", "ol", "li", "dd", "dt",
             "table","thead","tbody","tfoot","tr","th","td",
-            "img",
             ]
 
 
@@ -94,6 +94,5 @@ class Biography(models.Model):
         '''
         Overrides the save method to sanitise the content field
         '''
-        import bleach
         self.content = bleach.clean(text=self.content, tags=self.allowed_print_tags)
         super(Biography, self).save(*args, **kwargs) # Call the "real" save() method.

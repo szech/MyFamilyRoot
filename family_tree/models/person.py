@@ -1,13 +1,25 @@
 from django.db import models
-from django.contrib.auth.models import User
+from custom_user.models import User
 from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as tran
+from django.core.validators import validate_email
+from family_tree.models.family import Family
+from django.conf import settings
+from PIL import Image
+import os
+from common import create_hash
 
-#Localised Gender choices
+#Localised Gender choices https://docs.djangoproject.com/en/1.7/ref/models/fields/#choices
+FEMALE ='F'
+MALE ='M'
+OTHER = 'O'
+
 GENDER_CHOICES = (
-    ('F', _('Female')),
-    ('M', _('Male')),
-    ('O', _('Other')),
+    (FEMALE, _('Female')),
+    (MALE, _('Male')),
+    (OTHER, _('Other')),
 )
+
 
 
 class PersonManager(models.Manager):
@@ -15,53 +27,6 @@ class PersonManager(models.Manager):
     Manager extended to get related family members
     '''
 
-
-    def get_related_data(self,person):
-        '''
-        Gets all the relations and people that are related to the arguement person as a named tuple
-        people_upper: People with a higher hierachy score (e.g. parents)
-        people_lower: People with a lower hierachy score (e.g. kids)
-        relations: List of relations
-        '''
-        import collections
-        related_data = collections.namedtuple('related_data', ['people_upper', 'people_same_level', 'people_lower', 'relations'])
-
-        from django.db.models import Q
-        from family_tree.models import Relation
-        relations = Relation.objects.filter(Q(from_person=person) | Q(to_person=person))
-
-        #Yeah get some raw SQL on!  We are assuming that the 'from' has a higher hierarchy than the 'to'
-        people_upper = list(Person.objects.raw("""   SELECT p.*
-                                                FROM family_tree_person p
-                                                INNER JOIN family_tree_relation r
-                                                    ON r.from_person_id = p.id
-                                                WHERE r.to_person_id = %s AND r.relation_type = 2
-                                                ORDER BY p.hierarchy_score, gender
-                                        """, [person.id]))
-
-        people_same_level = list(Person.objects.raw("""  SELECT p.*
-                                                    FROM family_tree_person p
-                                                    INNER JOIN family_tree_relation r
-                                                        ON r.from_person_id = p.id
-                                                    WHERE r.to_person_id = {0} AND r.relation_type = 1
-                                                    UNION ALL
-                                                    SELECT p.*
-                                                    FROM family_tree_person p
-                                                    INNER JOIN family_tree_relation r
-                                                        ON r.to_person_id = p.id
-                                                    WHERE r.from_person_id = {0} AND r.relation_type = 1
-                                                    ORDER BY p.hierarchy_score, gender
-                                        """.format(person.id)))
-
-        people_lower = list(Person.objects.raw("""   SELECT p.*
-                                                FROM family_tree_person p
-                                                INNER JOIN family_tree_relation r
-                                                    ON r.to_person_id = p.id
-                                                WHERE r.from_person_id = %s AND r.relation_type = 2
-                                                ORDER BY p.hierarchy_score, gender
-                                        """, [person.id]))
-
-        return related_data(people_upper, people_same_level, people_lower, relations)
 
 
 class NullableEmailField(models.EmailField):
@@ -95,16 +60,20 @@ class Person(models.Model):
     objects = PersonManager()
 
     #Only required fields
-    name = models.CharField(max_length=255, db_index = True, unique = True, null = False, blank = False)
+    name = models.CharField(max_length=255, db_index = True, null = False, blank = False)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null = False, blank = False)
     locked = models.BooleanField(default = False, null=False) #Allows a user to lock their profile
-
+    family = models.ForeignKey(Family, blank=False, null=False, db_index = True) #Family
+    language = models.CharField(max_length=5, choices=settings.LANGUAGES, null = False, blank = False, default='en')
 
     #Optional Fields
     birth_year = models.IntegerField(blank=True, null=False, default = 0)
     year_of_death = models.IntegerField(blank=True, null=False, default = 0)
 
     photo = models.ImageField(upload_to='profile_photos', blank=True, null=False)
+    small_thumbnail = models.ImageField(upload_to='profile_photos', blank=True, null=False)
+    large_thumbnail = models.ImageField(upload_to='profile_photos', blank=True, null=False)
+
     email = NullableEmailField(blank=True, null=True, default=None, unique=True)
     telephone_number = models.CharField(max_length=30, blank=True, null=False)
     website = models.CharField(max_length=100, blank=True, null=False)
@@ -115,7 +84,7 @@ class Person(models.Model):
     longitude = models.FloatField(blank=True, null=False, default = 0)
 
     #Calculated Fields
-    user = models.ForeignKey(User, blank=True, null=True) #link this to a user if they have an email address
+    user = models.ForeignKey(User, blank=True, null=True, db_index = True) #link this to a user if they have an email address
     hierarchy_score = models.IntegerField(default = 100, db_index = True) #parents have lower score, children have higher
 
     #Tracking
@@ -134,62 +103,86 @@ class Person(models.Model):
         '''
         super(Person, self).__init__(*args, **kwargs)
         self._original_email = self.email
+        self._original_address = self.address
+        self.original_language = self.language
 
 
-    def is_valid_email(self,email):
+    def have_user_details_changed(self):
         '''
-        Tests if valid email address using regular expression
-        (from http://stackoverflow.com/questions/8022530/python-check-for-valid-email-address
-        and http://stackoverflow.com/questions/201323/using-a-regular-expression-to-validate-an-email-address)
+        Do we need to update the user object?
         '''
-        import re
-        if re.match("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
-            return True
-        else:
+        #No email no user
+        if not self.email:
             return False
+
+        #Change in email
+        if (self._original_email != self.email):
+            return True
+
+        #Change in language
+        if (self.original_language != self.language):
+            return True
+
+        #New record
+        if not self.id:
+            return True
+
+        return False
 
 
     def create_update_user(self):
         '''
         Creates a django user if an email address is supplied with  Person
         '''
-        #No email, then don't create a user
-        if len(self.email) == 0 or not self.is_valid_email(self.email):
+        #No email or email hasn't changed, then don't create a user
+        if not self.have_user_details_changed():
             return
 
+        if self.email:
+            validate_email(self.email)
+            #Check not used by another user
 
-        if User.objects.filter(username = self.email).count() == 0:
+        #If person is already linked to a user
+        if self.user:
 
-            #User does not exist
-            if not self.is_valid_email(self._original_email) or User.objects.filter(username = self._original_email).count() == 0:
+            #Update user details
+            if self.user.name != self.name or self.user.email != self.email \
+                or self.user.family_id != self.family_id or self.user.language != self.language:
+                self.user.name = self.name
+                self.user.email = self.email
+                self.user.family_id = self.family_id
+                self.user.language = self.language
+                self.user.save_user_only()
 
-                #Create a new user
-                user = User(username=self.email,
-                            email=self.email,
-                            password=User.objects.make_random_password(length=8))
 
-                user.save()
-
-
-            else:
-                #Update existing user
-                user = User.objects.get(username = self._original_email)
-                user.username = self.email
-                user.email = self.email
-                user.save()
-
-        else:
-            #User already exists, link this profile with the user
-            user = User.objects.get(username = self.email)
-
-        self.user = user
 
 
     def save(self, *args, **kwargs):
         '''
         Overrides the save method to determine the calculated fields
         '''
+
+        #Ensure email is in lowercase
+        if self.email:
+            self.email = self.email.lower()
+
         self.create_update_user()
+
+        #If address has changed, geocode it
+        if self._original_address != self.address:
+            self.geocode_address()
+
+        #If no address then reset it to 0
+        if not self.address:
+            self.latitude = 0
+            self.longitude = 0
+
+        super(Person, self).save(*args, **kwargs) # Call the "real" save() method.
+
+    def save_person_only(self, *args, **kwargs):
+        '''
+        Save method without any extras
+        '''
         super(Person, self).save(*args, **kwargs) # Call the "real" save() method.
 
 
@@ -237,3 +230,108 @@ class Person(models.Model):
             return None
 
         return relation
+
+
+    def geocode_address(self):
+        '''
+        Gets the logitude and latitude of address for plotting on a map
+        '''
+        if not self.address:
+            return
+
+        from familyroot.secrets import GOOGLE_API_KEY
+
+        #Attempt to google the location, if it fails, try bing as backup
+        try:
+            from geopy.geocoders import GoogleV3
+            google_locator = GoogleV3(api_key = GOOGLE_API_KEY)
+            location = google_locator.geocode(self.address)
+
+
+            if location.latitude == 0 and location.longitude ==0:
+                self._geocode_address_using_backup()
+
+            self.latitude = location.latitude
+            self.longitude = location.longitude
+
+        except:
+            self._geocode_address_using_backup()
+
+
+
+    def _geocode_address_using_backup(self):
+        '''
+        Gets the logitude and latitude of address for plotting on a map from backup service (Bing)
+        '''
+        try:
+
+            from familyroot.secrets import BING_MAPS_API_KEY
+            from geopy.geocoders import Bing
+            bing_locator = Bing(api_key = BING_MAPS_API_KEY)
+
+            location = bing_locator.geocode(self.address)
+
+            self.latitude = location.latitude
+            self.longitude = location.longitude
+
+        except:
+            return
+
+
+    def set_hires_photo(self, filename):
+        '''
+        Checks file is an image and converts it to a small jpeg
+        '''
+        #Check this is a valid image
+        try:
+
+            path_and_filename = ''.join([settings.MEDIA_ROOT, 'profile_photos/', filename])
+            im = Image.open(path_and_filename)
+            im.verify()
+
+            #Open it again!
+            #http://stackoverflow.com/questions/12413649/python-image-library-attributeerror-nonetype-object-has-no-attribute-xxx
+            im = Image.open(path_and_filename).convert('RGB') #Convert to RGB
+            im.thumbnail((500,500), Image.ANTIALIAS) #Reasonble size to allow cropping down to 200x200
+
+            im.save(path_and_filename, "JPEG", quality=90)
+
+
+            self.photo = 'profile_photos/' + filename
+
+        except:
+            os.remove(path_and_filename)
+            raise Exception(tran("Invalid image!")) #Use tran here as it gets serialized so lazy tran fails
+
+
+
+    def crop_and_resize_photo(self, x, y, w, h, display_height):
+        '''
+        Crops the photo and produces a large and small thumbnail
+        '''
+
+        path_and_filename = ''.join([settings.MEDIA_ROOT, str(self.photo)])
+        im = Image.open(path_and_filename)
+
+        width, height=im.size
+        ratio = height / display_height
+
+        #Prevent picture becoming too big during crop
+        if ratio > 6:
+            raise Exception(tran("Invalid image!"))
+
+        x = int(x * ratio)
+        y = int(y * ratio)
+        w = int(w * ratio)
+        h = int(h * ratio)
+
+        small_thumb_name = ''.join([create_hash(self.name), 'small_thumb', '.jpg'])
+        large_thumb_name = ''.join([create_hash(self.name), 'large_thumb', '.jpg'])
+
+        small_thumb = im.copy()
+        small_thumb.crop((x, y, x + w, y + h)).resize((80,80), Image.ANTIALIAS).save(''.join([settings.MEDIA_ROOT, 'profile_photos/', small_thumb_name]), "JPEG", quality=75)
+        self.small_thumbnail = 'profile_photos/' + small_thumb_name
+
+        large_thumb = im.copy()
+        large_thumb.crop((x, y, x + w, y + h)).resize((200,200), Image.ANTIALIAS).save(''.join([settings.MEDIA_ROOT, 'profile_photos/', large_thumb_name]), "JPEG", quality=75)
+        self.large_thumbnail = 'profile_photos/' + large_thumb_name

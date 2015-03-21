@@ -2,11 +2,10 @@
 {% load cache %}
 {% load i18n %}
 
-<!--
-Based on Twitters bootstrap http://getbootstrap.com/getting-started/#whats-included
--->
 
-<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
+<!--[if IE 8]>    <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %} class="no-js ie8 oldie"> <![endif]-->
+<!--[if IE 9]>    <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %} class="no-js ie9 oldie"> <![endif]-->
+<!--[if gt IE 9]><!--> <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>  <!--<![endif]-->
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,8 +13,11 @@ Based on Twitters bootstrap http://getbootstrap.com/getting-started/#whats-inclu
 
 	<title>ok!Kindred</title>
 
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <!--
+        Cannot guarantee CDN in China
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    -->
+    <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -34,6 +36,8 @@ Based on Twitters bootstrap http://getbootstrap.com/getting-started/#whats-inclu
 </head>
 
 <body>
+
+
     {% block nav %}
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
       <div class="container">
@@ -55,24 +59,17 @@ Based on Twitters bootstrap http://getbootstrap.com/getting-started/#whats-inclu
 
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                  <li><a href="/">{% trans "Tree" %}</a></li> <!--use  class="active" to highlight it -->
-                  <li><a href="#">{% trans "Map" %}</a></li>
-                  <li><a href="/about/">{% trans "About" %}</a></li>
-
+                    <li><a href="/">{% trans "Tree" %}</a></li> <!--use  class="active" to highlight it -->
+                    <li><a href="/map/">{% trans "Map" %}</a></li>
+                    <li><a href="/search/">{% trans "Search" %}</a></li>
+                    <li><a href="/about/">{% trans "About" %}</a></li>
                 </ul>
 
 
 
                 <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <form class="navbar-form navbar-right" role="form" action="/search/" method="GET">{% csrf_token %}
-                            <div class="form-group">
-                              <input type="text" class="form-control">
-                            </div>
-                            <button type="submit" class="btn btn-success">{% trans "Search" %}</button>
-                        </form>
-                    </li>
-                  <li><a href="/accounts/logout/">{% trans "Log Out" %}</a></li>
+                    <li><a href="/settings/">{% trans "Settings" %}</a></li>
+                    <li><a href="/accounts/logout/">{% trans "Log Out" %}</a></li>
                 </ul>
             </div><!--/.navbar-collapse -->
 
@@ -88,10 +85,20 @@ Based on Twitters bootstrap http://getbootstrap.com/getting-started/#whats-inclu
 
     {% block content %}{% endblock %}
 
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <!--
+        Cannot guarantee CDN in China
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+    <script src="{% static "js/jquery-1.11.2.min.js" %}"></script>
+    <script src="{% static "js/bootstrap.min.js" %}"></script>
+    -->
+    <script src="{% static "js/app.js" %}"></script>
+
+
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     {% block extrascript %}{% endblock %}
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
 
 
 </body>
